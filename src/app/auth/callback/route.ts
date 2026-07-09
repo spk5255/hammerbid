@@ -6,7 +6,9 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  // Fresh confirmations are almost always new accounts — land them on the
+  // quick tour. An explicit ?next= (e.g. password reset) still wins.
+  const next = searchParams.get("next") ?? "/welcome";
 
   if (code) {
     const supabase = await createClient();

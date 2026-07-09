@@ -9,9 +9,13 @@ import { SignOutButton } from "@/components/sign-out-button";
 export async function Navbar() {
   const { profile } = await getUserAndProfile();
 
+  // Signed-out visitors only ever reach the /auth gate, which brings its own
+  // full-screen chrome — the navbar belongs to the signed-in app.
+  if (!profile) return null;
+
   // unread DM count for the inbox badge (RLS scopes both queries to the viewer)
   let unread = 0;
-  if (profile) {
+  {
     const supabase = await createClient();
     const { data: convos } = await supabase.from("conversations").select("id");
     if (convos?.length) {
@@ -29,7 +33,7 @@ export async function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 pt-[env(safe-area-inset-top)] backdrop-blur">
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-4 px-4">
         <Link href="/" className="text-lg font-bold tracking-tight">
           Hammer<span className="text-sky-400">bid</span>
@@ -53,47 +57,35 @@ export async function Navbar() {
           >
             Sell
           </Button>
-          {profile ? (
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                nativeButton={false}
-                render={<Link href="/dashboard" />}
-              >
-                Dashboard
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                nativeButton={false}
-                render={<Link href="/messages" />}
-              >
-                Messages
-                {unread > 0 && (
-                  <span className="ml-1 rounded-full bg-sky-500 px-1.5 text-[10px] font-semibold text-white tabular-nums">
-                    {unread}
-                  </span>
-                )}
-              </Button>
-              <Link
-                href="/settings"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
-                @{profile.username}
-              </Link>
-              {profile.is_seller && <SellerBadge />}
-              <SignOutButton />
-            </>
-          ) : (
-            <Button
-              size="sm"
-              nativeButton={false}
-              render={<Link href="/auth" />}
-            >
-              Sign in
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            nativeButton={false}
+            render={<Link href="/dashboard" />}
+          >
+            Dashboard
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            nativeButton={false}
+            render={<Link href="/messages" />}
+          >
+            Messages
+            {unread > 0 && (
+              <span className="ml-1 rounded-full bg-sky-500 px-1.5 text-[10px] font-semibold text-white tabular-nums">
+                {unread}
+              </span>
+            )}
+          </Button>
+          <Link
+            href="/settings"
+            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            @{profile.username}
+          </Link>
+          {profile.is_seller && <SellerBadge />}
+          <SignOutButton />
         </nav>
       </div>
     </header>

@@ -12,7 +12,8 @@ export function SignOutButton() {
   async function signOut() {
     setPending(true);
     await createClient().auth.signOut();
-    router.push("/");
+    // The whole app is behind the gate, so land there directly.
+    router.push("/auth?tab=sign-in");
     router.refresh();
   }
 

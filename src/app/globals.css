@@ -149,13 +149,48 @@
 .hero-rise {
   animation: hero-rise 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
+/* ===== iOS app feel: touch ergonomics + safe areas ===== */
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+button,
+a,
+label {
+  touch-action: manipulation; /* no 350ms double-tap-zoom delay */
+}
+/* Installed (Add to Home Screen / native shell): clear the home indicator.
+   Top inset is handled per-element so sticky headers stay correct. */
+@media (display-mode: standalone) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* ===== auth gate: the hammer tape scrolls like an auction ticker ===== */
+@keyframes gate-tape {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    /* the list is rendered twice, so half the height is one full loop */
+    transform: translateY(-50%);
+  }
+}
+.gate-tape {
+  animation: gate-tape 32s linear infinite;
+}
+.gate-tape:hover {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-line,
   .hero-area,
   .hero-drop,
   .hero-note,
   .hero-dot,
-  .hero-rise {
+  .hero-rise,
+  .gate-tape {
     animation: none;
   }
 }
