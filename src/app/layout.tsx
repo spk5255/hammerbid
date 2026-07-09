@@ -34,6 +34,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#0c0f14",
+  // Draw edge-to-edge on iPhone (notch / Dynamic Island); safe-area insets
+  // are handled in globals.css and the navbar.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
