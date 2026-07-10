@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { BidActivityFeed } from "@/components/bid-activity-feed";
@@ -13,6 +14,25 @@ import { SellerBadge } from "@/components/seller-badge";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
 import type { Listing } from "@/lib/types";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("listings")
+    .select("title")
+    .eq("id", id)
+    .maybeSingle();
+  return {
+    title: data?.title
+      ? `${data.title} — Hammerbid`
+      : "Hammerbid — Live Auction Marketplace",
+  };
+}
 
 export default async function ListingPage({
   params,

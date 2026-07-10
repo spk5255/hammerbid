@@ -127,8 +127,9 @@ export function PriceChart({
                 content={<PriceTooltip />}
                 cursor={{ stroke: "#64748b", strokeDasharray: "3 3" }}
               />
+              {/* auction prices are step functions — no drift between bids */}
               <Area
-                type="monotone"
+                type="stepAfter"
                 dataKey="v"
                 stroke={color}
                 strokeWidth={2}

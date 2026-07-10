@@ -16,12 +16,12 @@ export function ListingCard({
   points: number[];
   bidCount?: number;
 }) {
-  const up = points.length > 1 ? points[points.length - 1] >= points[0] : true;
-  const first = points[0] ?? Number(listing.starting_price);
   const cur = toCents(String(listing.current_price));
-  const base = toCents(String(first));
-  // display-only percentage (§3.2)
+  const base = toCents(String(listing.starting_price));
+  // display-only percentage (§3.2) — measured since open so it matches the
+  // detail page, not the sparkline's trailing window
   const pct = base > 0 ? (((cur - base) / base) * 100).toFixed(0) : "0";
+  const up = cur >= base;
 
   return (
     <Link
@@ -63,6 +63,7 @@ export function ListingCard({
             {formatMoney(listing.current_price)}
           </span>
           <span
+            title="Change since the opening price"
             className={cn(
               "text-xs font-medium tabular-nums",
               up ? "text-emerald-400" : "text-red-400"

@@ -24,8 +24,10 @@ export function CountdownTimer({
   endsAt: string;
   className?: string;
 }) {
-  // Computed only after mount to avoid a server/client hydration mismatch.
-  const [text, setText] = useState<string | null>(null);
+  // Server-rendered with the request-time label so the countdown is visible
+  // before hydration; the client re-computes with its own clock (differences
+  // are a second or two, hence suppressHydrationWarning).
+  const [text, setText] = useState<string>(() => label(endsAt));
 
   useEffect(() => {
     const update = () => setText(label(endsAt));
@@ -41,9 +43,10 @@ export function CountdownTimer({
   const ended = text === "Ended";
   return (
     <span
+      suppressHydrationWarning
       className={cn("tabular-nums", ended && "font-medium text-red-400", className)}
     >
-      {text ?? "—"}
+      {text}
     </span>
   );
 }

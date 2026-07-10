@@ -6,7 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { buyNow } from "@/app/listing/actions";
 import { AddPaymentMethodDialog } from "@/components/add-payment-method-dialog";
-import { REBID_COOLDOWN_MINUTES } from "@/lib/constants";
+import { MAX_BID_AMOUNT, REBID_COOLDOWN_MINUTES } from "@/lib/constants";
 import {
   addAmounts,
   formatMoney,
@@ -61,18 +61,29 @@ export function BidPanel(props: Props) {
     props.buyNowPrice != null &&
     toCents(props.currentPrice) < toCents(props.buyNowPrice);
 
-  const validAmount = MONEY_RE.test(amount.trim());
-  const allInTotal = validAmount ? withBuyerPremium(amount.trim()) : "";
-  const cents = validAmount ? toCents(amount.trim()) : NaN;
-  const position = !validAmount
-    ? null
-    : cents < toCents(props.startingPrice)
-      ? "floor"
-      : !props.hasActiveBids || cents >= toCents(toLead)
-        ? "lead"
-        : cents > toCents(props.currentPrice)
-          ? "deadzone"
-          : "book";
+  const trimmed = amount.trim();
+  const wellFormed = MONEY_RE.test(trimmed);
+  // specific, actionable validation states (not just "invalid")
+  const tooManyDecimals = /^\d+\.\d{3,}$/.test(trimmed);
+  const overMax =
+    /^\d{6,}(\.\d+)?$/.test(trimmed) ||
+    (wellFormed && toCents(trimmed) > MAX_BID_AMOUNT * 100);
+  const validAmount = wellFormed && !overMax;
+  const allInTotal = validAmount ? withBuyerPremium(trimmed) : "";
+  const cents = validAmount ? toCents(trimmed) : NaN;
+  const position = overMax
+    ? "cap"
+    : !validAmount
+      ? null
+      : cents < toCents(props.startingPrice)
+        ? "floor"
+        : !props.hasActiveBids || cents >= toCents(toLead)
+          ? "lead"
+          : cents > toCents(props.currentPrice)
+            ? "deadzone"
+            : "book";
+  // a bid the RPC would reject shouldn't show a fee preview or submit
+  const placeable = position === "lead" || position === "book";
 
   async function placeBid() {
     const value = amount.trim();
@@ -82,6 +93,10 @@ export function BidPanel(props: Props) {
     }
     if (toCents(value) < toCents(props.startingPrice)) {
       toast.error(`Bids start at ${formatMoney(props.startingPrice)}`);
+      return;
+    }
+    if (toCents(value) > MAX_BID_AMOUNT * 100) {
+      toast.error(`Bids max out at ${formatMoney(String(MAX_BID_AMOUNT))}`);
       return;
     }
     if (
@@ -235,7 +250,7 @@ export function BidPanel(props: Props) {
               {formatMoney(props.myBidAmount)}
             </span>
             {toCents(props.myBidAmount) >= toCents(props.currentPrice) ? (
-              <span className="ml-1 text-emerald-400">— you&apos;re on top</span>
+              <span className="ml-1 text-emerald-400">— you&apos;re leading</span>
             ) : (
               <span className="ml-1 text-sky-400">
                 — in the book (wins if higher bids withdraw)
@@ -285,25 +300,38 @@ export function BidPanel(props: Props) {
                   Bids start at {formatMoney(props.startingPrice)}.
                 </span>
               )}
+              {position === "cap" && (
+                <span className="text-red-400">
+                  Bids max out at {formatMoney(String(MAX_BID_AMOUNT))}.
+                </span>
+              )}
             </p>
           )}
 
           <p className="text-xs text-muted-foreground">
-            {validAmount ? (
+            {validAmount && placeable ? (
               <>
-                Win at {formatMoney(amount.trim())} → your card is charged{" "}
+                Win at {formatMoney(trimmed)} → your card is charged{" "}
                 <span className="font-medium text-foreground tabular-nums">
                   {formatMoney(allInTotal)}
                 </span>{" "}
                 (incl. 5% buyer&apos;s premium) when the auction closes.
               </>
+            ) : tooManyDecimals ? (
+              "Use up to 2 decimals — like 25.50."
+            ) : position === "floor" || position === "deadzone" || overMax ? (
+              "Adjust your bid above to see your all-in total."
             ) : (
               "Enter a valid amount to see your all-in total."
             )}
           </p>
 
           {props.hasCard ? (
-            <Button type="submit" disabled={pending} className="w-full">
+            <Button
+              type="submit"
+              disabled={pending || !placeable}
+              className="w-full"
+            >
               {pending
                 ? "Working…"
                 : props.myBidAmount

@@ -12,6 +12,10 @@ export const MAX_LISTING_DAYS = 30; // ends_at at most this far out
 // (keep in sync with c_rebid_cooldown in place_bid — migration 0005)
 export const REBID_COOLDOWN_MINUTES = 5;
 
+// NOTE: "services" was removed — it double-encoded the Product/Service type
+// toggle and showed up twice in the marketplace filter row. Existing rows
+// with category "services" stay valid in the DB; service listings pick the
+// closest category (usually "other") and are found via the Service type chip.
 export const LISTING_CATEGORIES = [
   "electronics",
   "collectibles",
@@ -19,6 +23,5 @@ export const LISTING_CATEGORIES = [
   "home",
   "art",
   "gaming",
-  "services",
   "other",
 ] as const;
