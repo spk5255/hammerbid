@@ -172,6 +172,22 @@ export default async function DashboardPage() {
         </Button>
       </div>
 
+      <Link
+        href="/referrals"
+        className="flex items-center justify-between gap-3 rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm transition-colors hover:bg-emerald-400/15"
+      >
+        <span>
+          <span className="font-semibold">Give $5, get $5.</span>{" "}
+          <span className="text-muted-foreground">
+            Invite a friend — you both earn bid credit when they place their
+            first bid.
+          </span>
+        </span>
+        <span className="shrink-0 font-medium text-emerald-400">
+          Invite →
+        </span>
+      </Link>
+
       <Section title="My bids">
         {activeBids.length === 0 ? (
           <EmptyState
@@ -208,7 +224,7 @@ export default async function DashboardPage() {
                       </span>{" "}
                       ·{" "}
                       <span className={onTop ? "text-emerald-400" : "text-sky-400"}>
-                        {onTop ? "on top" : "in the book"}
+                        {onTop ? "leading" : "in the book"}
                       </span>
                     </p>
                   </div>
@@ -226,7 +242,11 @@ export default async function DashboardPage() {
         )}
 
         {historyBids.length > 0 && (
-          <ul className="mt-3 divide-y divide-border/60 rounded-xl border border-border/60 bg-card/50">
+          <details className="mt-3">
+            <summary className="cursor-pointer text-xs text-muted-foreground transition-colors hover:text-foreground">
+              Bid history ({historyBids.length}) — won, lost, withdrawn
+            </summary>
+            <ul className="mt-2 divide-y divide-border/60 rounded-xl border border-border/60 bg-card/50">
             {historyBids.slice(0, 15).map((b) => {
               const badge =
                 b.status === "active"
@@ -253,7 +273,8 @@ export default async function DashboardPage() {
                 </li>
               );
             })}
-          </ul>
+            </ul>
+          </details>
         )}
       </Section>
 

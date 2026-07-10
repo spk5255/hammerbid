@@ -61,6 +61,14 @@ export async function Navbar() {
             variant="ghost"
             size="sm"
             nativeButton={false}
+            render={<Link href="/referrals" />}
+          >
+            Invite
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            nativeButton={false}
             render={<Link href="/dashboard" />}
           >
             Dashboard

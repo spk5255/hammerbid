@@ -7,6 +7,7 @@ import {
   EyeIcon,
   EyeOffIcon,
   GavelIcon,
+  GiftIcon,
   Loader2Icon,
   MailCheckIcon,
   StoreIcon,
@@ -72,6 +73,13 @@ export function AuthForm() {
   const [pending, setPending] = useState(false);
   const [intent, setIntent] = useState<"buy" | "sell">("buy");
   const [sentTo, setSentTo] = useState<string | null>(null);
+  // shared across the Sign up / Sign in tabs so switching never wipes it
+  const [email, setEmail] = useState("");
+
+  // referral capture: /auth?ref=<username>, validated against the username
+  // shape before being stored or displayed
+  const refParam = searchParams.get("ref") ?? "";
+  const referredBy = /^[A-Za-z0-9_]{3,20}$/.test(refParam) ? refParam : null;
 
   // A confirmation link that couldn't be exchanged here (e.g. opened in a
   // different browser) lands on /auth?error=confirmation_failed. The email
@@ -157,6 +165,8 @@ export function AuthForm() {
         data: {
           username: parsed.data.username,
           is_seller: parsed.data.intent === "sell",
+          // resolved to a referrals row by a DB trigger at signup
+          ...(referredBy ? { referred_by: referredBy } : {}),
         },
       },
     });
@@ -180,6 +190,24 @@ export function AuthForm() {
       // Email confirmation is enabled on the Supabase project.
       setSentTo(parsed.data.email);
     }
+  }
+
+  async function sendReset() {
+    const target = email.trim();
+    if (!target) {
+      toast.error("Enter your email above first.");
+      return;
+    }
+    setPending(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(target, {
+      redirectTo: `${window.location.origin}/auth/callback?next=/auth/update-password`,
+    });
+    setPending(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(`Password reset link sent to ${target}.`);
   }
 
   if (sentTo) {
@@ -213,6 +241,17 @@ export function AuthForm() {
 
   return (
     <div>
+      {referredBy && (
+        <div className="mb-4 flex items-start gap-2 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-2.5 text-sm">
+          <GiftIcon className="mt-0.5 size-4 shrink-0 text-emerald-300" />
+          <span>
+            Invited by <span className="font-medium">@{referredBy}</span> —
+            you&apos;ll{" "}
+            <span className="text-emerald-300">both get $5 in bid credit</span>{" "}
+            after your first bid.
+          </span>
+        </div>
+      )}
       <div className="mb-6">
         <h2 className="text-2xl font-semibold tracking-tight">
           {tab === "sign-up" ? "Create your account" : "Welcome back"}
@@ -245,6 +284,8 @@ export function AuthForm() {
                   autoComplete="email"
                   autoFocus
                   required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="h-11"
                 />
               </div>
@@ -335,6 +376,10 @@ export function AuthForm() {
                   "Create account"
                 )}
               </Button>
+              <p className="text-center text-xs leading-relaxed text-muted-foreground">
+                By creating an account you agree that bids are binding at
+                close — you can withdraw any time before the hammer falls.
+              </p>
             </form>
           </TabsContent>
         )}
@@ -351,11 +396,23 @@ export function AuthForm() {
                   autoComplete="email"
                   autoFocus
                   required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="h-11"
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label htmlFor="signin-password">Password</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="signin-password">Password</Label>
+                  <button
+                    type="button"
+                    onClick={sendReset}
+                    disabled={pending}
+                    className="text-xs text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
                 <PasswordInput
                   id="signin-password"
                   autoComplete="current-password"

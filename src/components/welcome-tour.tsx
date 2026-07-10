@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -204,6 +205,16 @@ export function WelcomeTour({ username }: { username: string | null }) {
                 Set up selling
               </Button>
             </div>
+            <p className="mt-5 text-xs text-muted-foreground">
+              Auctions are better with rivals —{" "}
+              <Link
+                href="/referrals"
+                className="font-medium text-sky-400 underline-offset-2 hover:underline"
+              >
+                invite a friend and you both get $5 in bid credit
+              </Link>
+              .
+            </p>
           </div>
         ) : (
           <div className="min-h-[19rem]">
