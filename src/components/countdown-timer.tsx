@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +25,7 @@ export function CountdownTimer({
   endsAt: string;
   className?: string;
 }) {
+  const router = useRouter();
   // Server-rendered with the request-time label so the countdown is visible
   // before hydration; the client re-computes with its own clock (differences
   // are a second or two, hence suppressHydrationWarning).
@@ -41,6 +43,14 @@ export function CountdownTimer({
   }, [endsAt]);
 
   const ended = text === "Ended";
+
+  // One server re-render on the zero-cross so ended lots close their bid UI
+  // without waiting for a manual reload. Deps only flip once, so an
+  // already-ended mount refreshes at most once and never loops.
+  useEffect(() => {
+    if (ended) router.refresh();
+  }, [ended, router]);
+
   return (
     <span
       suppressHydrationWarning

@@ -135,18 +135,22 @@ const STEPS = [
 export function WelcomeTour({ username }: { username: string | null }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/";
+  // same-origin paths only (open-redirect guard)
+  const rawNext = searchParams.get("next") ?? "/";
+  const next =
+    rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
 
   // steps 0..3 teach; the last index is the send-off
   const total = STEPS.length + 1;
   const [step, setStep] = useState(0);
   const finale = step === total - 1;
 
-  // Seeing the tour once is enough — the sign-in fallback checks this
-  // marker so returning users aren't re-toured on this device.
-  useEffect(() => {
+  // Completing (or skipping) the tour once is enough — the sign-in fallback
+  // checks this marker so returning users aren't re-toured on this device.
+  // Set on exit, not on mount: an abandoned tour should show again.
+  function markDone() {
     localStorage.setItem("hb_tour_done", "1");
-  }, []);
+  }
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -158,6 +162,7 @@ export function WelcomeTour({ username }: { username: string | null }) {
   }, [total]);
 
   function finish() {
+    markDone();
     router.push(next);
     router.refresh();
   }
@@ -198,7 +203,10 @@ export function WelcomeTour({ username }: { username: string | null }) {
               </Button>
               <Button
                 variant="outline"
-                onClick={() => router.push("/settings")}
+                onClick={() => {
+                  markDone();
+                  router.push("/settings");
+                }}
                 className="h-11 flex-1 text-sm"
               >
                 <StoreIcon className="size-4" />

@@ -112,12 +112,16 @@ export default async function DashboardPage() {
   const purchases = (purchasesData ?? []) as unknown as OrderRow[];
   const payoutsEnabled = payData?.payouts_enabled ?? false;
 
-  const activeBids = bids.filter(
-    (b) => b.status === "active" && b.listings?.status === "active"
-  );
-  const historyBids = bids.filter(
-    (b) => !(b.status === "active" && b.listings?.status === "active")
-  );
+  // A lot whose ends_at has passed is frozen even if settlement hasn't
+  // flipped its status yet — bids are binding at close, so no Withdraw
+  // button in that window (mirrors the withdraw_bid DB guard).
+  const nowMs = Date.now();
+  const isLive = (b: BidRow) =>
+    b.status === "active" &&
+    b.listings?.status === "active" &&
+    new Date(b.listings.ends_at).getTime() > nowMs;
+  const activeBids = bids.filter(isLive);
+  const historyBids = bids.filter((b) => !isLive(b));
 
   let myListings: ListingRow[] = [];
   let sales: OrderRow[] = [];

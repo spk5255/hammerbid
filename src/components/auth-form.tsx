@@ -62,7 +62,11 @@ function PasswordInput({
 export function AuthForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/";
+  // same-origin paths only — "//evil.com" or absolute URLs must not survive
+  // authentication (open-redirect guard)
+  const rawNext = searchParams.get("next") ?? "/";
+  const next =
+    rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
   const supabase = createClient();
 
   // First-run visitors land on sign-up; returning users arrive via
@@ -77,9 +81,20 @@ export function AuthForm() {
   const [email, setEmail] = useState("");
 
   // referral capture: /auth?ref=<username>, validated against the username
-  // shape before being stored or displayed
+  // shape before being stored or displayed. Persisted so attribution
+  // survives the invitee browsing away and coming back without the param.
   const refParam = searchParams.get("ref") ?? "";
-  const referredBy = /^[A-Za-z0-9_]{3,20}$/.test(refParam) ? refParam : null;
+  const refFromUrl = /^[A-Za-z0-9_]{3,20}$/.test(refParam) ? refParam : null;
+  const [referredBy, setReferredBy] = useState<string | null>(refFromUrl);
+  useEffect(() => {
+    if (refFromUrl) {
+      localStorage.setItem("hb_ref", refFromUrl);
+      setReferredBy(refFromUrl);
+      return;
+    }
+    const stored = localStorage.getItem("hb_ref");
+    if (stored && /^[A-Za-z0-9_]{3,20}$/.test(stored)) setReferredBy(stored);
+  }, [refFromUrl]);
 
   // A confirmation link that couldn't be exchanged here (e.g. opened in a
   // different browser) lands on /auth?error=confirmation_failed. The email

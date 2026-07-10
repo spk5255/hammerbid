@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import {
   autoReleaseDueOrders,
@@ -69,7 +70,10 @@ function authorized(request: Request) {
   const secret = process.env.CRON_SECRET;
   // no secret configured: open in dev, locked in production
   if (!secret) return process.env.NODE_ENV !== "production";
-  return request.headers.get("authorization") === `Bearer ${secret}`;
+  const got = Buffer.from(request.headers.get("authorization") ?? "");
+  const expected = Buffer.from(`Bearer ${secret}`);
+  // constant-time comparison — no timing oracle on the cron secret
+  return got.length === expected.length && timingSafeEqual(got, expected);
 }
 
 export async function GET(request: Request) {

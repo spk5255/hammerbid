@@ -18,7 +18,8 @@ export function CurrentPriceDisplay({
   const pct = st > 0 ? ((diff / st) * 100).toFixed(1) : "0.0";
 
   return (
-    <div>
+    // polite live region: screen readers hear realtime price moves
+    <div aria-live="polite" aria-atomic="true">
       <p className="text-sm text-muted-foreground">Current price</p>
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <span className="text-4xl font-bold tabular-nums">
